@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
+  <ItemGroup Condition="Exists('$(PKHeXCoreProject)')">
+    <ProjectReference Include="$(PKHeXCoreProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('$(PKHeXCoreProject)')">
     <PackageReference Include="PKHeX.Core" Version="24.5.5" />
   </ItemGroup>
 

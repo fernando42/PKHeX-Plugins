@@ -282,6 +282,16 @@ namespace AutoModPlugins
             APILegality.ForceLevel100for50 = settings.ForceLevel100for50;
             APILegality.AllowHOMETransferGeneration = settings.AllowHOMETransferGeneration;
             APILegality.TracebackHandlerType = settings.TracebackHandlerType;
+            APILegality.UseLevelBasedRelearnMoves = settings.UseLevelBasedRelearnMoves;
+            APILegality.ShowEncounterRecommendations = settings.ShowEncounterRecommendations;
+            APILegality.PIDSettings = new PIDGenerationSettings
+            {
+                RespectShinyType = settings.PIDRespectShinyType,
+                RespectNature = settings.PIDRespectNature,
+                RespectGender = settings.PIDRespectGender,
+                RespectHiddenPower = settings.PIDRespectHiddenPower,
+                PreferSquareShiny = settings.PIDPreferSquareShiny,
+            };
             Legalizer.EnableEasterEggs = settings.EnableEasterEggs;
             SmogonGenner.PromptForImport = settings.PromptForSmogonImport;
             ModLogic.Config = new LivingDexConfig

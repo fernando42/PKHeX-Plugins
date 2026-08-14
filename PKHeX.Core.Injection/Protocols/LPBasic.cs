@@ -183,7 +183,7 @@ namespace PKHeX.Core.Injection
                     var offset = sub.Offset;
                     var scb = scba.GetBlock(scbkey);
                     var ram = psb.com.ReadBytes(offset, scb.Data.Length);
-                    ram.CopyTo(scb.Data, 0);
+                    ram.AsSpan().CopyTo(scb.Data);
                     if (read == null)
                     {
                         read = [ram];

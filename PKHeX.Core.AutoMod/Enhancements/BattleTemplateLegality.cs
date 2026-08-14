@@ -116,7 +116,7 @@ namespace PKHeX.Core.AutoMod
                 .ToList();
             var initialcount = encounters.Count;
             if (set is RegenTemplate { Regen.EncounterFilters: { } x })
-                encounters.RemoveAll(enc => !BatchEditing.IsFilterMatch(x, enc));
+                encounters.RemoveAll(enc => !BatchEditingUtil.IsFilterMatch(x, enc));
 
             // No available encounters
             if (encounters.Count == 0)
@@ -144,7 +144,7 @@ namespace PKHeX.Core.AutoMod
             var abilityreq = APILegality.GetRequestedAbility(failed, set);
             if (abilityreq == AbilityRequest.NotHidden && encounters.All(z => z is { Ability: AbilityPermission.OnlyHidden }))
                 return string.Format(ONLY_HIDDEN_ABILITY_AVAILABLE, species_name);
-            if (abilityreq == AbilityRequest.Hidden && encounters.All(z => z.Generation is 3 or 4) && destVer.GetGeneration() < 8)
+            if (abilityreq == AbilityRequest.Hidden && encounters.All(z => z.Generation is 3 or 4) && destVer.Generation < 8)
                 return string.Format(HIDDEN_ABILITY_UNAVAILABLE, species_name);
 
             // Home Checks
@@ -201,7 +201,7 @@ namespace PKHeX.Core.AutoMod
                     gamelist
                 );
                 if (set is RegenTemplate r && r.Regen.EncounterFilters is { } x)
-                    encounters = encounters.Where(enc => BatchEditing.IsFilterMatch(x, enc));
+                    encounters = encounters.Where(enc => BatchEditingUtil.IsFilterMatch(x, enc));
                 if (encounters.Any())
                     successful_combination = [.. combination];
             }

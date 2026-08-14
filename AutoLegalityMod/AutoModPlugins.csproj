@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
@@ -14,9 +14,18 @@
   <ItemGroup>
     <PackageReference Include="Costura.Fody" Version="5.8.0-alpha0098" PrivateAssets="all" />
     <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(PKHeXCoreProject)')">
+    <ProjectReference Include="$(PKHeXCoreProject)" ExcludeAssets="runtime" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('$(PKHeXCoreProject)')">
     <PackageReference Include="PKHeX.Core" Version="24.5.5" ExcludeAssets="runtime" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
+    <PackageReference Include="System.Resources.Extensions" Version="10.0.0" />
     <ProjectReference Include="..\PKHeX.Core.AutoMod\PKHeX.Core.AutoMod.csproj" />
     <ProjectReference Include="..\PKHeX.Core.Enhancements\PKHeX.Core.Enhancements.csproj" />
     <ProjectReference Include="..\PKHeX.Core.Injection\PKHeX.Core.Injection.csproj" />
@@ -38,5 +47,18 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
+
+  <!-- Copy plugin DLL to PKHeX application directory after build -->
+  <Target Name="CopyToPKHeX" AfterTargets="Build">
+    <PropertyGroup>
+      <PKHeXDir>C:\codes\PKHeX</PKHeXDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <OutputFiles Include="$(OutDir)AutoModPlugins.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OutputFiles)" DestinationFiles="$(PKHeXDir)\plugins\%(Filename)%(Extension)" Condition="Exists($(PKHeXDir))" SkipUnchangedFiles="true" />
+    <Message Text="Copied AutoModPlugins.dll to $(PKHeXDir)\plugins" Importance="high" Condition="Exists($(PKHeXDir))" />
+    <Warning Text="PKHeX directory not found at $(PKHeXDir) — skipping copy." Condition="!Exists($(PKHeXDir))" />
+  </Target>
 
 </Project>

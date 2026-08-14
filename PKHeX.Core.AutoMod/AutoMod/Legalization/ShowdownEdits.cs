@@ -22,7 +22,7 @@ namespace PKHeX.Core.AutoMod
                 return;
             string Report = la.Report();
 
-            if (Report.Contains(LegalityCheckStrings.LPIDGenderMismatch))
+            if (Report.Contains(LegalityCheckLocalization.Get().PIDGenderMismatch))
                 pk.Gender = (byte)(pk.Gender == 0 ? 1 : 0);
 
             if (pk.Gender is not 0 and not 1)
@@ -38,11 +38,11 @@ namespace PKHeX.Core.AutoMod
             if (pk.Species == (ushort)Species.Toxtricity)
             {
                 if (pk.Form == ToxtricityUtil.GetAmpLowKeyResult(val))
-                    pk.Nature = val; // StatNature already set
-                if (pk.Format >= 8 && pk.StatNature != pk.Nature && pk.StatNature != Nature.Serious && (pk.StatNature > Nature.Quirky || (int)pk.StatNature % 6 == 0))
+                    pk.Nature = val; // StatAlignment already set
+                if (pk.Format >= 8 && pk.StatAlignment != pk.Nature && pk.StatAlignment != Nature.Serious && (pk.StatAlignment > Nature.Quirky || (int)pk.StatAlignment % 6 == 0))
                 {
                     // Only Serious Mint for Neutral Natures
-                    pk.StatNature = Nature.Serious;
+                    pk.StatAlignment = Nature.Serious;
                 }
                 return;
             }
@@ -59,12 +59,12 @@ namespace PKHeX.Core.AutoMod
             var la2 = new LegalityAnalysis(pk);
             var enc1 = la.EncounterMatch;
             var enc2 = la2.EncounterMatch;
-            if (((!ReferenceEquals(enc1, enc2) && enc1 is not EncounterEgg) || la2.Results.Any(z => z.Identifier is CheckIdentifier.Nature or CheckIdentifier.Encounter && !z.Valid)) && enc is not EncounterEgg)
+            if (((!ReferenceEquals(enc1, enc2) && enc1 is not IEncounterEgg) || la2.Results.Any(z => z.Identifier is CheckIdentifier.Nature or CheckIdentifier.Encounter && !z.Valid)) && enc is not IEncounterEgg)
                 pk.Nature = orig;
-            if (pk.Format >= 8 && pk.StatNature != pk.Nature && pk.StatNature is Nature.Hardy or Nature.Docile or Nature.Bashful or >= Nature.Quirky)
+            if (pk.Format >= 8 && pk.StatAlignment != pk.Nature && pk.StatAlignment is Nature.Hardy or Nature.Docile or Nature.Bashful or >= Nature.Quirky)
             {
                 // Only Serious Mint for Neutral Natures
-                pk.StatNature = Nature.Serious;
+                pk.StatAlignment = Nature.Serious;
             }
         }
 
@@ -151,7 +151,7 @@ namespace PKHeX.Core.AutoMod
                 }
             }
 
-            pk.SetSuggestedFormArgument(enc.Species);
+            pk.SetSuggestedFormArgument(pk.Species, pk.Form, pk.Context, EvolutionChain.GetEvolutionChainsAllGens(pk, enc));
             if (evolutionRequired || formchange || pk.Ability != set.Ability)
             {
                 tb.Handle(TracebackType.Ability, $"Set Ability after evolution to {set.Ability}");
@@ -167,7 +167,7 @@ namespace PKHeX.Core.AutoMod
 
             var currentlang = (LanguageID)pk.Language;
             var finallang = lang ?? currentlang;
-            if (finallang == LanguageID.Hacked)
+            if (finallang == LanguageID.None)
                 finallang = LanguageID.English;
             pk.Language = (int)finallang;
 
@@ -201,7 +201,7 @@ namespace PKHeX.Core.AutoMod
                 (GameVersion)pk.Version
             );
             var nickname = newnick.Length > maxlen ? newnick[..maxlen] : newnick;
-            if (!WordFilter.IsFiltered(nickname, out _))
+            if (!WordFilter.IsFiltered(nickname, pk.Context, out _, out _))
                 pk.SetNickname(nickname);
             else
                 pk.ClearNickname();
@@ -304,12 +304,20 @@ namespace PKHeX.Core.AutoMod
 
             if (la.Parsed && !pk.FatefulEncounter)
             {
-                // For dexnav. Certain encounters come with "random" relearn moves, and our requested moves might require one of them.
-                Span<ushort> moves = stackalloc ushort[4];
-                la.GetSuggestedRelearnMoves(moves, enc);
-                pk.ClearRelearnMoves();
-                pk.SetRelearnMoves(moves);
-                tb.Handle(TracebackType.Moves, "Set Relearn Moves for encounter");
+                // Use level-based relearn move selection if enabled, otherwise use legality-suggested moves
+                if (APILegality.UseLevelBasedRelearnMoves)
+                {
+                    pk.SetLevelBasedRelearnMoves(enc, tb);
+                }
+                else
+                {
+                    // For dexnav. Certain encounters come with "random" relearn moves, and our requested moves might require one of them.
+                    Span<ushort> moves = stackalloc ushort[4];
+                    la.GetSuggestedRelearnMoves(moves, enc);
+                    pk.ClearRelearnMoves();
+                    pk.SetRelearnMoves(moves);
+                    tb.Handle(TracebackType.Moves, "Set Relearn Moves for encounter");
+                }
             }
             la = new LegalityAnalysis(pk);
             if (la.Info.Relearn.Any(z => z.Judgement == Severity.Invalid))

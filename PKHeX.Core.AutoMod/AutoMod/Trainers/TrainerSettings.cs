@@ -39,14 +39,16 @@ namespace PKHeX.Core.AutoMod
         {
             if (!ver.IsValidSavedVersion())
                 ver = GameUtil.GameVersions.First(z => ver.Contains(z));
-            var ctx = ver.GetContext();
-            var fallback =
-                lang == null
-                    ? new SimpleTrainerInfo(ver) { Context = ctx }
-                    : new SimpleTrainerInfo(ver) { Language = (int)lang, Context = ctx };
-            fallback.OT = DefaultOT;
-            fallback.TID16 = DefaultTID16;
-            fallback.SID16 = DefaultSID16;
+            var ctx = ver.Context;
+            var fallback = new SimpleTrainerInfo(ver)
+            {
+                Context = ctx,
+                OT = DefaultOT,
+                TID16 = DefaultTID16,
+                SID16 = DefaultSID16,
+            };
+            if (lang != null)
+                fallback = fallback with { Language = (int)lang };
             return fallback;
         }
 
@@ -91,7 +93,7 @@ namespace PKHeX.Core.AutoMod
             ITrainerInfo? trainer = null;
             var special_version = FringeVersions.Any(z => z.Contains(ver));
             if (!special_version)
-                trainer = Database.GetTrainerFromGen(generation, lang);
+                trainer = Database.GetTrainer(GameUtil.GetVersion(generation), lang);
             if (trainer != null)
                 return trainer;
 

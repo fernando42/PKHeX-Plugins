@@ -382,6 +382,78 @@ namespace PKHeX.Core.AutoMod
             pk.RelearnMove4 = 0;
         }
 
+        /// <summary>
+        /// Automatically selects relearn moves based on the Pokémon's current level.
+        /// Generates a fresh encounter PKM at the target level and extracts the most recent moves as relearn moves.
+        /// Falls back to <see cref="LegalityAnalysis.GetSuggestedRelearnMoves"/> if the encounter-based approach is invalid.
+        /// </summary>
+        /// <param name="pk">Pokémon to modify</param>
+        /// <param name="enc">Encounter the Pokémon originated from</param>
+        /// <param name="tb">Traceback handler</param>
+        public static void SetLevelBasedRelearnMoves(
+            this PKM pk,
+            IEncounterable enc,
+            ITracebackHandler tb
+        )
+        {
+            // Relearn moves only exist from Generation 6 onwards
+            if (pk.Format < 6 || pk is PB7)
+                return;
+
+            // Fateful encounters (mystery gifts, etc.) have fixed relearn moves — don't override
+            if (pk.FatefulEncounter || enc is MysteryGift)
+            {
+                FallbackToSuggestedRelearnMoves(pk, enc, tb);
+                return;
+            }
+
+            var level = pk.CurrentLevel;
+
+            // Generate a fresh PKM from the encounter to get its natural move set at this level
+            var tr = TrainerSettings.GetSavedTrainerData(enc.Version, enc.Generation);
+            var fresh = enc.ConvertToPKM(tr, EncounterCriteria.Unrestricted);
+            fresh.CurrentLevel = level;
+
+            // Get the moves the encounter would naturally have at this level
+            Span<ushort> encounterMoves = stackalloc ushort[4];
+            fresh.GetMoves(encounterMoves);
+
+            // If the encounter has non-zero moves, use them as relearn moves
+            if (encounterMoves[0] != 0)
+            {
+                pk.ClearRelearnMoves();
+                pk.SetRelearnMoves(encounterMoves);
+
+                // Validate with legality
+                var la = new LegalityAnalysis(pk);
+                if (la.Info.Relearn.All(z => z.Valid))
+                {
+                    tb.Handle(TracebackType.Moves, $"Set level-based relearn moves (Lv.{level}): {string.Join(", ", encounterMoves.ToArray().Where(m => m != 0).Select(m => (Move)m))}");
+                    return;
+                }
+            }
+
+            // Fall back to legality-suggested relearn moves
+            FallbackToSuggestedRelearnMoves(pk, enc, tb);
+        }
+
+        private static void FallbackToSuggestedRelearnMoves(
+            this PKM pk,
+            IEncounterable enc,
+            ITracebackHandler tb
+        )
+        {
+            pk.ClearRelearnMoves();
+            var la = new LegalityAnalysis(pk);
+            if (la.Parsed && !pk.FatefulEncounter)
+            {
+                Span<ushort> moves = stackalloc ushort[4];
+                la.GetSuggestedRelearnMoves(moves, enc);
+                pk.SetRelearnMoves(moves);
+                tb.Handle(TracebackType.Moves, "Set relearn moves from legality suggestion (fallback)");
+            }
+        }
+
         public static uint GetShinyPID(int tid, int sid, uint pid, int type)
         {
             return (uint)(((tid ^ sid ^ (pid & 0xFFFF) ^ type) << 16) | (pid & 0xFFFF));
@@ -424,7 +496,7 @@ namespace PKHeX.Core.AutoMod
                 return;
             }
 
-            if (APILegality.IsPIDIVSet(pk, enc) && enc is not (EncounterStatic8N or EncounterStatic8NC or EncounterStatic8ND) && !(enc is EncounterEgg && GameVersion.BDSP.Contains(enc.Version)))
+            if (APILegality.IsPIDIVSet(pk, enc) && enc is not (EncounterStatic8N or EncounterStatic8NC or EncounterStatic8ND) && !(enc is IEncounterEgg && GameVersion.BDSP.Contains(enc.Version)))
                 return;
 
             if (enc is EncounterStatic8N or EncounterStatic8NC or EncounterStatic8ND)
@@ -506,7 +578,7 @@ namespace PKHeX.Core.AutoMod
             if (pk is not IAwakened pb7)
                 return;
             Span<byte> result = stackalloc byte[6];
-            AwakeningUtil.SetExpectedMinimumAVs(result, (PB7)pb7);
+            AwakeningUtil.SetExpectedMinimumAVs((PB7)pb7, result);
             var EVs = set.EVs.Select(z => (byte)Math.Min(z, 200)).ToArray();
             pb7.AV_HP = Math.Max(result[0], EVs[0]);
             pb7.AV_ATK = Math.Max(result[1], EVs[1]);
@@ -519,7 +591,7 @@ namespace PKHeX.Core.AutoMod
         public static void SetHTLanguage(this PKM pk, byte prefer)
         {
             var pref_lang = (LanguageID)prefer;
-            if (pref_lang == LanguageID.Hacked || pref_lang == LanguageID.UNUSED_6)
+            if (pref_lang == LanguageID.None || pref_lang == LanguageID.UNUSED_6)
                 prefer = 2; // prefer english
             if (pk is IHandlerLanguage pkm)
                 pkm.HandlingTrainerLanguage = prefer;
@@ -737,8 +809,7 @@ namespace PKHeX.Core.AutoMod
 
         private static void SetDateLocksWC8(PKM pk, WC8 w)
         {
-            var locked = EncounterServerDate.WC8Gifts.TryGetValue(w.CardID, out var time);
-            if (locked)
+            if (w.GetDistributionWindow(out var time))
                 pk.MetDate = time.Start;
         }
 

@@ -1094,7 +1094,7 @@ namespace PKHeX.Core.AutoMod
             var valid = Enum.TryParse(value, out LanguageID lang);
             if (!valid)
                 return null;
-            if (lang is LanguageID.Hacked or LanguageID.UNUSED_6)
+            if (lang is LanguageID.None or LanguageID.UNUSED_6)
                 return LanguageID.English;
             return lang;
         }

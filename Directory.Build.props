@@ -1,10 +1,12 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Version>24.5.5</Version>
-    <LangVersion>12</LangVersion>
+    <TargetFramework>net10.0</TargetFramework>
+    <Version>26.7.7</Version>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <NeutralLanguage>en</NeutralLanguage>
     <SourceRevisionId>$([System.DateTime]::UtcNow.ToString("yyMMddHHmmss"))</SourceRevisionId>
+    <!-- Local PKHeX source; when present, projects reference it instead of the PKHeX.Core NuGet package (bleeding-edge build). -->
+    <PKHeXCoreProject>C:\codes\PKHeX\PKHeX.Core\PKHeX.Core.csproj</PKHeXCoreProject>
   </PropertyGroup>
 </Project>

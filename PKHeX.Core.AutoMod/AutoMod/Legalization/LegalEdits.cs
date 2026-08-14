@@ -74,8 +74,9 @@ namespace PKHeX.Core.AutoMod
         public static bool ValidBall(this PKM pk)
         {
             var rep = new LegalityAnalysis(pk).Report(true);
-            return rep.Contains(LegalityCheckStrings.LBallEnc)
-                || rep.Contains(LegalityCheckStrings.LBallSpeciesPass);
+            var loc = LegalityCheckLocalization.Get();
+            return rep.Contains(loc.BallEnc)
+                || rep.Contains(loc.BallSpeciesPass);
         }
 
         /// <summary>

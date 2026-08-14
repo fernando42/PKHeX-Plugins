@@ -38,7 +38,7 @@ namespace AutoModPlugins
         private async void GPSSUpload(object? sender, EventArgs e)
         {
             var pk = PKMEditor.PreparePKM();
-            byte[] rawdata = pk.Data;
+            byte[] rawdata = pk.Data.ToArray();
             try
             {
                 var response = await PKHeX.Core.Enhancements.NetUtil.GPSSPost(

@@ -2,6 +2,12 @@
 
   <ItemGroup>
     <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(PKHeXCoreProject)')">
+    <ProjectReference Include="$(PKHeXCoreProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('$(PKHeXCoreProject)')">
     <PackageReference Include="PKHeX.Core" Version="24.5.5" />
   </ItemGroup>
 

@@ -647,7 +647,7 @@ namespace PKHeX.Core.Injection
                         ReflectUtil.SetValue(scb, "Type", sub.Type);
 
                     var ram = psb.com.ReadBytes(psb.GetCachedPointer(sb, offset), scb.Data.Length);
-                    ram.CopyTo(scb.Data, 0);
+                    ram.AsSpan().CopyTo(scb.Data);
                     if (read is null)
                     {
                         read = [ram];

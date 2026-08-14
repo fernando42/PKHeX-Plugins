@@ -135,6 +135,35 @@ namespace AutoModPlugins
         [Description("Only generate Pokémon natively available in the game version pair.")]
         public bool NativeOnly { get; set; } = true;
 
+        // Legality - Advanced PID & Moves
+        [Category(Legality)]
+        [Description("Enables level-based automatic relearn move selection when editing/generating Pokémon.")]
+        public bool UseLevelBasedRelearnMoves { get; set; } = true;
+
+        [Category(Legality)]
+        [Description("Enables display of encounter method recommendations for the current game version.")]
+        public bool ShowEncounterRecommendations { get; set; } = false;
+
+        [Category(Legality)]
+        [Description("Controls whether PID generation respects the requested shiny type.")]
+        public bool PIDRespectShinyType { get; set; } = true;
+
+        [Category(Legality)]
+        [Description("Controls whether PID generation respects the requested nature (Gen 3-5).")]
+        public bool PIDRespectNature { get; set; } = true;
+
+        [Category(Legality)]
+        [Description("Controls whether PID generation respects the requested gender (Gen 3-5).")]
+        public bool PIDRespectGender { get; set; } = true;
+
+        [Category(Legality)]
+        [Description("Controls whether PID generation respects the requested Hidden Power type (Gen 3-5).")]
+        public bool PIDRespectHiddenPower { get; set; } = true;
+
+        [Category(Legality)]
+        [Description("If true, forces square shiny (XOR=0) when a shiny PID is requested.")]
+        public bool PIDPreferSquareShiny { get; set; } = false;
+
         // Miscellaneous
         [Category(Miscellaneous)]
         [Description("Base URL for Flagbrew's Global PKSM Sharing Service (GPSS) features.")]

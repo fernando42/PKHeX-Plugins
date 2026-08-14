@@ -20,7 +20,7 @@ namespace PKHeX.Core.AutoMod
         public Nature Nature { get; set; }
         public string FormName { get; set; }
         public byte Form { get; set; }
-        public int HiddenPowerType { get; set; }
+        public sbyte HiddenPowerType { get; set; }
         public bool CanGigantamax { get; set; }
         public byte DynamaxLevel { get; set; }
         public MoveType TeraType { get; set; }
@@ -34,7 +34,7 @@ namespace PKHeX.Core.AutoMod
 
         private readonly string ParentLines;
 
-        private RegenTemplate(IBattleTemplate set, int gen = PKX.Generation, string text = "")
+        private RegenTemplate(IBattleTemplate set, int gen = 9, string text = "")
         {
             Species = set.Species;
             Context = set.Context;
@@ -60,7 +60,7 @@ namespace PKHeX.Core.AutoMod
             SanitizeMoves(set, Moves);
         }
 
-        public RegenTemplate(ShowdownSet set, byte gen = PKX.Generation)
+        public RegenTemplate(ShowdownSet set, byte gen = 9)
             : this(set, gen, set.Text)
         {
             this.SanitizeForm(gen);
@@ -74,14 +74,14 @@ namespace PKHeX.Core.AutoMod
                 return;
             }
 
-            Regen = new RegenSet(set.InvalidLines, gen, shiny);
+            Regen = new RegenSet(set.InvalidLines.Select(z => z.Value).ToArray(), gen, shiny);
             Shiny = Regen.Extra.IsShiny;
             if (Ability == -1)
                 Ability = RegenUtil.GetRegenAbility(set.Species, gen, Regen.Extra.Ability);
             set.InvalidLines.Clear();
         }
 
-        public RegenTemplate(PKM pk, int gen = PKX.Generation)
+        public RegenTemplate(PKM pk, int gen = 9)
             : this(new ShowdownSet(pk), gen)
         {
             this.FixGender(pk.PersonalInfo);

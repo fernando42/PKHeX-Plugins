@@ -20,7 +20,7 @@ namespace PKHeX.Core.Enhancements
                 var country = "N/A";
                 var region = "N/A";
                 var DSRegion = "N/A";
-                if (p.pk is IGeoTrack gt)
+                if (p.Entity is IGeoTrack gt)
                 {
                     country = gt.Country.ToString();
                     region = gt.Region.ToString();
@@ -28,7 +28,7 @@ namespace PKHeX.Core.Enhancements
                 }
 
                 var markings = "N/A";
-                switch (p.pk)
+                switch (p.Entity)
                 {
                     case IAppliedMarkings7 m7:
                         markings = m7.MarkingValue.ToString();

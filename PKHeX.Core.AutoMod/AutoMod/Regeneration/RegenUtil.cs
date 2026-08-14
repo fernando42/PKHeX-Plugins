@@ -25,7 +25,7 @@ namespace PKHeX.Core.AutoMod
                 switch (key)
                 {
                     case "OT":
-                        sti.OT = value;
+                        sti = sti with { OT = value };
                         break;
                     case "TID" when int.TryParse(value, out int tid) && tid >= 0:
                         TID7 = tid;
@@ -34,7 +34,7 @@ namespace PKHeX.Core.AutoMod
                         SID7 = sid;
                         break;
                     case "OTGender":
-                        sti.Gender = (byte)(value is "Female" or "F" ? 1 : 0);
+                        sti = sti with { Gender = (byte)(value is "Female" or "F" ? 1 : 0) };
                         break;
                     default:
                         continue;
@@ -50,8 +50,11 @@ namespace PKHeX.Core.AutoMod
             SID7 = Math.Max(SID7, 0);
             const int mil = 1_000_000;
             uint repack = ((uint)SID7 * mil) + (uint)TID7;
-            tr.TID16 = format < 7 ? (ushort)TID7 : (ushort)(repack & 0xFFFF);
-            tr.SID16 = format < 7 ? (ushort)SID7 : (ushort)(repack >> 16);
+            tr = sti with
+            {
+                TID16 = format < 7 ? (ushort)TID7 : (ushort)(repack & 0xFFFF),
+                SID16 = format < 7 ? (ushort)SID7 : (ushort)(repack >> 16),
+            };
             return true;
         }
 
@@ -84,7 +87,7 @@ namespace PKHeX.Core.AutoMod
                 return [];
             var cleaned = lines.Select(z => z.TrimStart(EncounterFilterPrefix));
             var filters = StringInstruction.GetFilters(cleaned).ToArray();
-            BatchEditing.ScreenStrings(filters);
+            EntityBatchEditor.ScreenStrings(filters);
             return filters;
         }
 
@@ -159,7 +162,7 @@ namespace PKHeX.Core.AutoMod
             GameVersion ver
         )
         {
-            if (lang is LanguageID.UNUSED_6 or LanguageID.Hacked or null)
+            if (lang is LanguageID.UNUSED_6 or LanguageID.None or null)
                 return tr;
 
             if (tr is PokeTrainerDetails p)
@@ -196,9 +199,9 @@ namespace PKHeX.Core.AutoMod
         {
             if (lang == null)
                 return OT;
-            var max = Legal.GetMaxLengthOT(game.GetGeneration(), (LanguageID)lang);
+            var max = Legal.GetMaxLengthOT(game.Generation, (LanguageID)lang);
             OT = OT[..Math.Min(OT.Length, max)];
-            if (GameVersion.GG.Contains(game) || game.GetGeneration() >= 8) // switch keyboard only has latin characters, --don't mutate
+            if (GameVersion.GG.Contains(game) || game.Generation >= 8) // switch keyboard only has latin characters, --don't mutate
                 return OT;
             var full =
                 lang
@@ -216,7 +219,7 @@ namespace PKHeX.Core.AutoMod
         public static string MutateNickname(string nick, LanguageID? lang, GameVersion game)
         {
             // Length checks are handled later in SetSpeciesLevel
-            if (game.GetGeneration() >= 8 || lang == null)
+            if (game.Generation >= 8 || lang == null)
                 return nick;
             var full =
                 lang

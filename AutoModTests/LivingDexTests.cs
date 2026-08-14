@@ -40,7 +40,7 @@ namespace AutoModTests
 
         private static GenerateResult SingleSaveTest(this GameVersion s, LivingDexConfig cfg)
         {
-            var sav = SaveUtil.GetBlankSAV(s, "ALMUT");
+            var sav = BlankSaveFile.Get(s, "ALMUT");
             RecentTrainerCache.SetRecentTrainer(sav);
 
             var expected = sav.GetExpectedDexCount(cfg);

@@ -55,9 +55,11 @@ namespace PKHeX.Core.Injection
         {
             var pkm = Editor.PreparePKM();
             pkm.ResetPartyStats();
-            var data = RamOffsets.WriteBoxData(Bot.Version)
-                ? pkm.EncryptedBoxData
-                : pkm.EncryptedPartyData;
+            var data = new byte[RamOffsets.WriteBoxData(Bot.Version) ? pkm.SIZE_STORED : pkm.SIZE_PARTY];
+            if (RamOffsets.WriteBoxData(Bot.Version))
+                pkm.WriteEncryptedDataStored(data);
+            else
+                pkm.WriteEncryptedDataParty(data);
             Bot.SendSlot(data, box, slot);
         }
 

@@ -113,7 +113,7 @@ namespace PKHeX.Core.AutoMod
             }
             if (sav is SAV2)
             {
-                var g1 = new SAV1(GameVersion.YW) { Language = tr.Language, OT = tr.OT, TID16 = tr.TID16 };
+                var g1 = new SAV1(version: GameVersion.YW) { Language = tr.Language, OT = tr.OT, TID16 = tr.TID16 };
                 if (GetRandomEncounter(g1, species, form, shiny, false, nativeOnly, out var pkm))
                 {
                     if (pkm is PK1 pk1)
@@ -204,7 +204,7 @@ namespace PKHeX.Core.AutoMod
             else
                 blank.Form = form;
 
-            var template = EntityBlank.GetBlank(tr.Generation, tr.Version);
+            var template = EntityBlank.GetBlank(tr.Context);
             var item = GetFormSpecificItem(tr.Version, blank.Species, blank.Form);
             if (item is not null)
                 blank.HeldItem = (int)item;
@@ -246,7 +246,7 @@ namespace PKHeX.Core.AutoMod
             success = almres.Status;
             if (pk.Species is (ushort)Species.Gholdengo)
             {
-                pk.SetSuggestedFormArgument();
+                pk.SetSuggestedFormArgument(pk.Species, pk.Form, pk.Context, default);
                 pk.SetSuggestedMoves();
                 success = LegalizationResult.Regenerated;
             }
@@ -293,7 +293,7 @@ namespace PKHeX.Core.AutoMod
         {
             if (game == GameVersion.PLA)
                 return null;
-            var generation = ((GameVersion)game).GetGeneration();
+            var generation = game.Generation;
             return species switch
             {
                 (ushort)Species.Arceus

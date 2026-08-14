@@ -33,7 +33,7 @@ namespace AutoModTests
                 var illegalsets = new List<RegenTemplate>();
                 var setsTransfer = new List<ShowdownSet>();
 
-                var sav = SaveUtil.GetBlankSAV(s.GetContext(), "ALMUT");
+                var sav = BlankSaveFile.Get(s.Context, "ALMUT");
                 RecentTrainerCache.SetRecentTrainer(sav);
 
                 var lines = File.ReadAllLines(file).Where(z => !z.StartsWith("=====")).ToList();

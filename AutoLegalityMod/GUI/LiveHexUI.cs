@@ -20,6 +20,11 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
     public IList<PictureBox> SlotPictureBoxes => throw new InvalidOperationException();
     SaveFile ISlotViewer<PictureBox>.SAV => throw new InvalidOperationException();
 
+    public void ApplyNewFilter(Func<PKM, bool>? filter, bool reload = true)
+    {
+        // LiveHeX displays remote-injected slot data; box filtering does not apply.
+    }
+
     private readonly LiveHeXController Remote;
     private readonly SaveDataEditor<PictureBox> x;
     private readonly PluginSettings _settings;
@@ -72,7 +77,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             (SaveDataEditor<PictureBox>)(
                 test.GetValue(sav) ?? new Exception("Error with LiveHeXUI init.")
             );
-        x.Slots.Publisher.Subscribers.Add(this);
+        x.Slots.Publisher.Subscribe(this);
 
         CenterToParent();
     }
@@ -88,19 +93,30 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         if (!checkBox2.Checked || !Remote.Bot.Connected)
             return;
 
-        if (slot is not SlotInfoBox(var box, var slotpkm))
+        if (slot is not SlotInfoBox s)
             return;
 
         if (!type.IsContentChange())
             return;
 
         Remote.Bot.SendSlot(
-            RamOffsets.WriteBoxData(Remote.Bot.Version)
-                ? pkm.EncryptedBoxData
-                : pkm.EncryptedPartyData,
-            box,
-            slotpkm
+            GetEncryptedSlotBytes(pkm),
+            s.Box,
+            s.Slot
         );
+    }
+
+    private byte[] GetEncryptedSlotBytes(PKM pk)
+    {
+        if (RamOffsets.WriteBoxData(Remote.Bot.Version))
+        {
+            var data = new byte[pk.SIZE_STORED];
+            pk.WriteEncryptedDataStored(data);
+            return data;
+        }
+        var party = new byte[pk.SIZE_PARTY];
+        pk.WriteEncryptedDataParty(party);
+        return party;
     }
 
     private void SetTrainerData(SaveFile sav)
@@ -261,7 +277,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
                     (pkm.Species == 0 && pkm.EncryptionConstant == 0)
                     || (
                         pkm.Species > 0
-                        && pkm.Language != (int)LanguageID.Hacked
+                        && pkm.Language != (int)LanguageID.None
                         && pkm.Language != (int)LanguageID.UNUSED_6
                     )
                 );
@@ -360,7 +376,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             return true;
         if (pkm.Species <= 0)
             return false;
-        if (pkm.Language is (int)LanguageID.Hacked or (int)LanguageID.UNUSED_6)
+        if (pkm.Language is (int)LanguageID.None or (int)LanguageID.UNUSED_6)
             return false;
         return true;
     }
@@ -399,7 +415,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
         if (Remote.Bot.Connected)
             Remote.Bot.com.Disconnect();
 
-        x.Slots.Publisher.Subscribers.Remove(this);
+        x.Slots.Publisher.Unsubscribe(this);
         _settings.LatestIP = TB_IP.Text;
         _settings.LatestPort = TB_Port.Text;
         _settings.Save();
@@ -510,9 +526,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
             if (loadgrid)
             {
                 PKM pk = pkm!;
-                var pkmbytes = RamOffsets.WriteBoxData(Remote.Bot.Version)
-                    ? pk.EncryptedBoxData
-                    : pk.EncryptedPartyData;
+                var pkmbytes = GetEncryptedSlotBytes(pk);
                 if (pkmbytes.Length == Remote.Bot.SlotSize)
                 {
                     form.Bytes = pkmbytes;
@@ -684,7 +698,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
                 if (typeView)
                     WinFormsUtil.Alert($"Block type is {block.Type}.");
 
-                result = block.Data;
+                result = block.Data.ToArray();
             }
 
             bool blockview = (ModifierKeys & Keys.Control) == Keys.Control;
@@ -724,9 +738,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
                     if (loadgrid)
                     {
                         PKM pk = pkm!;
-                        var pkmbytes = RamOffsets.WriteBoxData(Remote.Bot.Version)
-                            ? pk.EncryptedBoxData
-                            : pk.EncryptedPartyData;
+                        var pkmbytes = GetEncryptedSlotBytes(pk);
                         if (pkmbytes.Length == Remote.Bot.SlotSize)
                         {
                             form.Bytes = pkmbytes;
@@ -870,7 +882,7 @@ public partial class LiveHeXUI : Form, ISlotViewer<PictureBox>
     private static byte[] GetBlockDataRaw(object sb, byte[] data) =>
         sb switch
         {
-            SCBlock sc => sc.Data,
+            SCBlock sc => sc.Data.ToArray(),
             IDataIndirect sv => sv.Data.ToArray(),
             _ => data,
         };
